@@ -70,9 +70,16 @@ public class TestCaseController {
         return testCases;
     }
     public static void test() {
-        String curlCommand = "curl --location --request POST 'http://localhost:8080/students?name=%E5%BC%A0%E4%B8%89&gender=1&age=20&className=%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%A7%91%E5%AD%A6'\n" +
-                "curl --location 'http://localhost:8080/students'\n" +
-                "curl --location 'http://localhost:8080/students/1'";
+        String curlCommand = "curl --location 'https://test12open.ezv-test.com/api/service/open/vod/file/info/tokenRegister' \\\n" +
+                "--header 'accessToken: at.dt2ct3ymaf8c1mfdcwrl0d3ia3zwnq9v-3nrxfwzl2z-1ipazdp-n5vflk06h' \\\n" +
+                "--header 'Content-Type: application/x-www-form-urlencoded' \\\n" +
+                "--data-urlencode 'storageId=E1$Fe$14$7kev$PX15Oh-$N1$61dHp96V$0$f74ed45d.jpeg' \\\n" +
+                "--data-urlencode 'duration=1' \\\n" +
+                "--data-urlencode 'fileName=test' \\\n" +
+                "--data-urlencode 'deviceSerial=889088640' \\\n" +
+                "--data-urlencode 'channelNo=12' \\\n" +
+                "--data-urlencode 'autoCoverPic=true' \\\n" +
+                "--data-urlencode 'spaceId=2027223'";
         List<String> curlCommands = CurlParserUtils.splitCurlCommandsSimple(curlCommand);
         List<TestCaseExcelData> testCases = new ArrayList<>();
         for (String oneCommand : curlCommands){
@@ -93,9 +100,8 @@ public class TestCaseController {
                 .doWrite(testCases);
     }
 
-    public static void main(String[] args) {
-//        test();
-        List<TestCase> testCases = readExcelToTestCases("test1.xlsx");
+    public static void runtestCase(String caseFileName) {
+        List<TestCase> testCases = readExcelToTestCases(caseFileName);
         ApiTester tester = new ApiTester();
 
         for (TestCase testCase : testCases) {
@@ -109,8 +115,10 @@ public class TestCaseController {
                 System.err.println("❌ 测试失败: " + e.getMessage());
             }
         }
-//        for (TestCase testCase : cases) {
-//            System.out.println(testCase);
-//        }
+    }
+
+    public static void main(String[] args) {
+//        test();
+        runtestCase("test1.xlsx");
     }
 }

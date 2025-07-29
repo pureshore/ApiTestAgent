@@ -1,32 +1,27 @@
 package core;
 
 import dto.TestCase;
-import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
+import utils.HttpClientUtils;
 import utils.JsonPathUtils;
-
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ApiTester {
-    private final OkHttpClient client = new OkHttpClient();
-
     public String sendRequest(TestCase testCase) throws IOException {
         // 替换URL中的变量
         String url = VariableStore.replaceVariables(testCase.getUrl());
 
         // 构建请求
-        Request.Builder builder = new Request.Builder()
-                .url(url);
-        RequestBody requestBody = buildRequestBody(testCase);
-        if (requestBody != null) {
-            builder.method(testCase.getMethod(), requestBody);
-        } else {
-            builder.method(testCase.getMethod(), null);
+        String result = null;
+        Map<String, String> headers = buildHeaders(testCase);
+        if ("json".equalsIgnoreCase(testCase.getParamType())) {
+            HttpClientUtils.postJson(url, VariableStore.replaceVariables(testCase.getBody()), headers);
+        }else if ("form".equalsIgnoreCase(testCase.getParamType())) {
+            Map<String, Object> formParams = buildRequestBody(testCase);
+            result = HttpClientUtils.request(url, testCase.getMethod(), formParams, headers);
         }
-
-        // 发送请求
-        Response response = client.newCall(builder.build()).execute();
-        String result = response.body().string();
 
         // 提取变量
         if (StringUtils.isNotBlank(testCase.getExtractRules())) {
@@ -36,42 +31,46 @@ public class ApiTester {
         return result;
     }
 
-    private RequestBody buildRequestBody(TestCase testCase) {
-        if ("json".equalsIgnoreCase(testCase.getParamType())) {
-            String jsonBody = VariableStore.replaceVariables(testCase.getBody());
-            return RequestBody.create(jsonBody, MediaType.parse("application/json"));
-        } else if ("form".equalsIgnoreCase(testCase.getParamType())) {
-            FormBody.Builder formBuilder = new FormBody.Builder();
+    private Map<String, String> buildHeaders(TestCase testCase) {
+        Map<String, String> headers = new HashMap<>();
+        if (testCase.getHeaders() != null && !testCase.getHeaders().isEmpty()) {
+            for (Map.Entry<String, Object> entry : testCase.getHeaders().entrySet()) {
+                headers.put(entry.getKey(), entry.getValue().toString());
+            }
+        }
+        return headers;
+    }
 
-            // 处理testCase.getBody()中的form-data参数
-            if (testCase.getBody() != null && !testCase.getBody().isEmpty()) {
-                for (String pair : testCase.getBody().split(";")) {
-                    String[] kv = pair.split("=");
-                    if (kv.length == 2) {
-                        formBuilder.add(kv[0], VariableStore.replaceVariables(kv[1]));
-                    }
+    private Map<String, Object> buildRequestBody(TestCase testCase) {
+        Map<String, Object> formParams = new HashMap<>();
+        // 处理testCase.getBody()中的form-data参数
+        if (testCase.getBody() != null && !testCase.getBody().isEmpty()) {
+            for (String pair : testCase.getBody().split("&")) {
+                String[] kv = pair.split("=");
+                if (kv.length == 2) {
+                    formParams.put(kv[0], VariableStore.replaceVariables(kv[1]));
                 }
             }
-
-            // 如果是GET请求且URL中有查询参数，也可以提取并放入body
-            if (testCase.getUrl().contains("?")) {
-                String queryString = testCase.getUrl().substring(testCase.getUrl().indexOf("?") + 1);
-                for (String pair : queryString.split("&")) {
-                    String[] kv = pair.split("=");
-                    if (kv.length == 2) {
-                        formBuilder.add(kv[0], VariableStore.replaceVariables(kv[1]));
-                    }
-                }
-            }
-            FormBody formBody = formBuilder.build();
-            return formBody.size() > 0 ? formBody : null; // 如果没有参数则返回null
         }
 
-        return null;
+        // 如果是GET请求且URL中有查询参数，也可以提取并放入body
+        if (testCase.getUrl().contains("?")) {
+            String queryString = testCase.getUrl().substring(testCase.getUrl().indexOf("?") + 1);
+            for (String pair : queryString.split("&")) {
+                String[] kv = pair.split("=");
+                if (kv.length == 2) {
+                    formParams.put(kv[0], VariableStore.replaceVariables(kv[1]));
+                }
+            }
+        }
+        return formParams.isEmpty() ?  null : formParams; // 如果没有参数则返回null
     }
 
 
     private void extractVariables(String json, String extractRules) {
+        if (StringUtils.isBlank(extractRules) || StringUtils.isBlank(json)) {
+            return;
+        }
         try {
             for (String rule : extractRules.split(";")) {
                 String[] parts = rule.split("=");
@@ -87,37 +86,4 @@ public class ApiTester {
         }
     }
 
-    public void assertResponse(Response response, TestCase testCase) {
-        // 断言状态码
-        if (response.code() != testCase.getExpectedStatus()) {
-            throw new AssertionError(
-                    "状态码不符: 预期 " + testCase.getExpectedStatus() +
-                            ", 实际 " + response.code()
-            );
-        }
-
-        // 断言响应字段
-        if (!testCase.getExpectedFields().isEmpty()) {
-            try {
-                String json = response.body().string();
-                for (String rule : testCase.getExpectedFields().split(";")) {
-                    String[] parts = rule.split("=");
-                    if (parts.length == 2) {
-                        String fieldPath = parts[0].trim();
-                        String expectedValue = VariableStore.replaceVariables(parts[1].trim());
-                        Object actualValue = JsonPathUtils.extractValue(json, fieldPath);
-                        if (!expectedValue.equals(actualValue.toString())) {
-                            throw new AssertionError(
-                                    "字段不符: " + fieldPath +
-                                            " 预期 " + expectedValue +
-                                            ", 实际 " + actualValue
-                            );
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("断言失败: " + e.getMessage());
-            }
-        }
-    }
 }
