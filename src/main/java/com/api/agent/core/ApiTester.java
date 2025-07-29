@@ -1,9 +1,10 @@
-package core;
+package com.api.agent.core;
 
-import dto.TestCase;
+import com.api.agent.dto.TestCase;
+import com.api.agent.utils.HttpClientUtils;
+import com.api.agent.utils.JsonPathUtils;
 import org.apache.commons.lang3.StringUtils;
-import utils.HttpClientUtils;
-import utils.JsonPathUtils;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;

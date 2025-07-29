@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.api.agent.mapper.StudentMapper">
+    <resultMap id="studentResultMap" type="com.api.agent.dto.entity.Student">
+        <id property="id" column="id" />
+        <result property="name" column="name" />
+        <result property="gender" column="gender" />
+        <result property="age" column="age" />
+        <result property="className" column="class_name" />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <insert id="insert" parameterType="com.api.agent.dto.entity.Student"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO student (name, gender, age, class_name)
+        VALUES (#{name}, #{gender}, #{age}, #{className})
+    </insert>
+
+    <update id="update" parameterType="com.api.agent.dto.entity.Student">
+        UPDATE student
+        SET
+        name = #{name},
+        gender = #{gender},
+        age = #{age},
+        class_name = #{className}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="Long">
+        DELETE FROM student WHERE id = #{id}
+    </delete>
+
+    <select id="selectById" parameterType="Long" resultMap="studentResultMap">
+        SELECT * FROM student WHERE id = #{id}
+    </select>
+
+    <select id="selectAll" resultMap="studentResultMap">
+        SELECT * FROM student
+    </select>
+</mapper>

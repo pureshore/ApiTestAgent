@@ -1,4 +1,4 @@
-package core;
+package com.api.agent.core;
 
 import java.util.HashMap;
 import java.util.Map;
