@@ -1,7 +1,8 @@
-package com.api.agent.core;
+package com.api.agent.controller;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSONObject;
+import com.api.agent.core.ApiTester;
 import com.api.agent.dto.TestCase;
 import com.api.agent.dto.excel.TestCaseExcelData;
 import com.api.agent.utils.CurlParserUtils;
@@ -10,14 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class TestCaseController {
+public class TestCaseUtils {
     /**
      * 将TestCaseExcelData转换为TestCase对象
      *
      * @param excelData Excel数据对象
      * @return TestCase对象
      */
-    private static TestCase convertToTestCase(TestCaseExcelData excelData) {
+    public static TestCase convertToTestCase(TestCaseExcelData excelData) {
         TestCase testCase = new TestCase();
 
         // 设置基本信息
