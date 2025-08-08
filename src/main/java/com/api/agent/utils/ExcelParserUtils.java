@@ -5,6 +5,7 @@ import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.read.listener.ReadListener;
 import com.alibaba.excel.util.ListUtils;
 import com.alibaba.fastjson.JSONObject;
+import com.api.agent.controller.TestCaseUtils;
 import com.api.agent.dto.TestCase;
 import com.api.agent.dto.excel.TestCaseExcelData;
 
@@ -76,14 +77,11 @@ public class ExcelParserUtils {
         // 解析Headers
         if (excelData.getHeaders() != null && !excelData.getHeaders().isEmpty()) {
             try {
-                JSONObject headersJson = JSONObject.parseObject(excelData.getHeaders());
-                testCase.setHeaders(headersJson);
+                testCase.setHeaders(TestCaseUtils.getHeaders(excelData.getHeaders()));
             } catch (Exception e) {
                 // 如果解析失败，设置为空JSONObject
-                testCase.setHeaders(new JSONObject());
+                testCase.setHeaders(null);
             }
-        } else {
-            testCase.setHeaders(new JSONObject());
         }
 
         // 解析ExpectedResult（如果存在）

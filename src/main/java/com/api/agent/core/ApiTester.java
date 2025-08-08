@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ApiTester {
-    public String sendRequest(TestCase testCase) throws IOException {
+    public String sendRequest(TestCase testCase)  {
         // 替换URL中的变量
         String url = VariableStore.replaceVariables(testCase.getUrl());
 
@@ -32,11 +32,34 @@ public class ApiTester {
         return result;
     }
 
+    private Map<String, Object> buildErrorParams(TestCase testCase) {
+        Map<String, Object> errorParams = new HashMap<>();
+        // 处理testCase.getBody()中的form-data参数
+        if (testCase.getErrorBody() != null && !testCase.getErrorBody().isEmpty()) {
+            for (String pair : testCase.getErrorBody().split(",")) {
+                String[] kv = pair.split("=");
+                if (kv.length == 2) {
+                    errorParams.put(kv[0], kv[1]);
+                }
+            }
+        }
+        return errorParams;
+    }
+
     private Map<String, String> buildHeaders(TestCase testCase) {
         Map<String, String> headers = new HashMap<>();
         if (testCase.getHeaders() != null && !testCase.getHeaders().isEmpty()) {
-            for (Map.Entry<String, Object> entry : testCase.getHeaders().entrySet()) {
-                headers.put(entry.getKey(), entry.getValue().toString());
+            for (Map.Entry<String, String> entry : testCase.getHeaders().entrySet()) {
+                headers.put(entry.getKey(), entry.getValue());
+            }
+        }
+        if(testCase.isError()) {
+            for (Map.Entry<String, Object> entry : buildErrorParams(testCase).entrySet()) {
+                if (entry.getValue().toString().equalsIgnoreCase("NULL")) {
+                    headers.remove(entry.getKey());
+                }else {
+                    headers.put(entry.getKey(), entry.getValue().toString());
+                }
             }
         }
         return headers;
@@ -64,7 +87,15 @@ public class ApiTester {
                 }
             }
         }
-        return formParams.isEmpty() ?  null : formParams; // 如果没有参数则返回null
+        if(testCase.isError()) {
+            for (Map.Entry<String, Object> entry : buildErrorParams(testCase).entrySet()) {
+                if (entry.getValue().toString().equalsIgnoreCase("NULL")) {
+                    formParams.remove(entry.getKey());
+                }
+                formParams.put(entry.getKey(), entry.getValue().toString());
+            }
+        }
+        return formParams;
     }
 
 
