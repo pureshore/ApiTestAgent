@@ -127,13 +127,8 @@ public class HttpClientUtils {
      * @return 请求结果
      */
     public static String request( String url, String method, Map<String, Object> params, Map<String, String> headers) {
-        try {
-            HttpResponse response = httpPost(url, method, params, headers);
-            HttpEntity entity = response.getEntity();
-            return entity != null ? EntityUtils.toString(entity, StandardCharsets.UTF_8) : null;
-        } catch (Exception e) {
-            throw new RuntimeException("HTTP请求失败", e);
-        }
+        HttpResponse response = httpPost(url, method, params, headers);
+        return getResponseContent(response);
     }
 
     /**
@@ -172,14 +167,5 @@ public class HttpClientUtils {
         } catch (IOException e) {
             throw new RuntimeException("HTTP请求失败", e);
         }
-    }
-    
-    /**
-     * 获取原始的HttpClient实例
-     * 
-     * @return HttpClient实例
-     */
-    public static HttpClient getClient() {
-        return client;
     }
 }
