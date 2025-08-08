@@ -4,32 +4,33 @@ import com.api.agent.dto.TestCase;
 import com.api.agent.utils.HttpClientUtils;
 import com.api.agent.utils.JsonPathUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpResponse;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ApiTester {
-    public String sendRequest(TestCase testCase)  {
+    private VariableStore variableStore = new VariableStore();
+
+    /**
+     * 发送请求
+     * @param testCase
+     */
+    public void sendRequest(TestCase testCase)  {
+        variableStore.clearAllVariables();
         // 替换URL中的变量
-        String url = VariableStore.replaceVariables(testCase.getUrl());
+        String url = variableStore.replaceVariables(testCase.getUrl());
 
         // 构建请求
-        String result = null;
         Map<String, String> headers = buildHeaders(testCase);
         if ("json".equalsIgnoreCase(testCase.getParamType())) {
-            HttpClientUtils.postJson(url, VariableStore.replaceVariables(testCase.getBody()), headers);
+            HttpClientUtils.postJson(url, variableStore.replaceVariables(testCase.getBody()), headers);
         }else if ("form".equalsIgnoreCase(testCase.getParamType())) {
             Map<String, Object> formParams = buildRequestBody(testCase);
-            result = HttpClientUtils.request(url, testCase.getMethod(), formParams, headers);
+            HttpResponse response = HttpClientUtils.httpPost(url, testCase.getMethod(), formParams, headers);
+            testCase.setHttpCode(response.getStatusLine().getStatusCode());
+            testCase.setResponseBody(HttpClientUtils.getResponseContent( response));
         }
-
-        // 提取变量
-        if (StringUtils.isNotBlank(testCase.getExtractRules())) {
-            extractVariables(result, testCase.getExtractRules());
-        }
-
-        return result;
     }
 
     private Map<String, Object> buildErrorParams(TestCase testCase) {
@@ -46,6 +47,11 @@ public class ApiTester {
         return errorParams;
     }
 
+    /**
+     * 构建请求头
+     * @param testCase
+     * @return
+     */
     private Map<String, String> buildHeaders(TestCase testCase) {
         Map<String, String> headers = new HashMap<>();
         if (testCase.getHeaders() != null && !testCase.getHeaders().isEmpty()) {
@@ -72,7 +78,7 @@ public class ApiTester {
             for (String pair : testCase.getBody().split("&")) {
                 String[] kv = pair.split("=");
                 if (kv.length == 2) {
-                    formParams.put(kv[0], VariableStore.replaceVariables(kv[1]));
+                    formParams.put(kv[0], variableStore.replaceVariables(kv[1]));
                 }
             }
         }
@@ -83,7 +89,7 @@ public class ApiTester {
             for (String pair : queryString.split("&")) {
                 String[] kv = pair.split("=");
                 if (kv.length == 2) {
-                    formParams.put(kv[0], VariableStore.replaceVariables(kv[1]));
+                    formParams.put(kv[0], variableStore.replaceVariables(kv[1]));
                 }
             }
         }
@@ -99,6 +105,11 @@ public class ApiTester {
     }
 
 
+    /**
+     * 提取返回接口的变量
+     * @param json
+     * @param extractRules
+     */
     private void extractVariables(String json, String extractRules) {
         if (StringUtils.isBlank(extractRules) || StringUtils.isBlank(json)) {
             return;
@@ -110,12 +121,53 @@ public class ApiTester {
                     String varName = parts[0].trim();
                     String jsonPath = parts[1].trim();
                     Object value = JsonPathUtils.extractValue(json, jsonPath);
-                    VariableStore.setVariable(varName, value);
+                    variableStore.setVariable(varName, value);
                 }
             }
         } catch (Exception e) {
             System.err.println("变量提取失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 断言接口返回
+     * @param testCase
+     */
+    public void assertResponse(TestCase testCase) {
+        // 提取变量
+        if (StringUtils.isNotBlank(testCase.getExtractRules())) {
+            extractVariables(testCase.getResponseBody(), testCase.getExtractRules());
+        }
+        testCase.setSuccess(true);
+
+        // 断言状态码
+        if (testCase.getHttpCode() != testCase.getExpectedStatus()) {
+            String errorMsg = "状态码不符: 预期 " + testCase.getExpectedStatus() + ", 实际 " + testCase.getHttpCode();
+            testCase.setSuccess(false);
+            testCase.setErrorMsg(errorMsg);
+        }
+
+        // 断言响应字段
+        if (!testCase.getExpectedFields().isEmpty()) {
+            try {
+                for (String rule : testCase.getExpectedFields().split(";")) {
+                    String[] parts = rule.split("=");
+                    if (parts.length == 2) {
+                        String fieldPath = parts[0].trim();
+                        String expectedValue = parts[1].trim();
+                        Object actualValue = variableStore.getVariable(fieldPath);
+                        if (!expectedValue.equals(actualValue.toString())) {
+                            String errorMsg = "字段 " + fieldPath + " 值不符: 预期 " + expectedValue + ", 实际 " + actualValue;
+                            testCase.setSuccess(false);
+                            testCase.setErrorMsg(errorMsg);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("断言失败: " + e.getMessage());
+            }
+        }
+        System.out.println(testCase.getResponseBody());
     }
 
 }

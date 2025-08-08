@@ -18,4 +18,11 @@ public class TestCase {
     private String expectedFields;
     private int expectedStatus;
     private boolean isError;
+    private int httpCode;
+    private String responseBody;
+    /**
+     * 用例执行是否成功
+     */
+    private boolean isSuccess;
+    private String errorMsg;
 }

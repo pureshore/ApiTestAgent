@@ -4,17 +4,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class VariableStore {
-    private static final Map<String, Object> variables = new HashMap<>();
+    private final Map<String, Object> variables = new HashMap<>();
 
-    public static void setVariable(String key, Object value) {
+    public void clearAllVariables() {
+        variables.clear();
+    }
+
+    public void setVariable(String key, Object value) {
         variables.put(key, value);
     }
 
-    public static Object getVariable(String key) {
+    public Object getVariable(String key) {
+        key = key.replace("$","");
         return variables.get(key);
     }
 
-    public static String replaceVariables(String text) {
+    public String replaceVariables(String text) {
         for (Map.Entry<String, Object> entry : variables.entrySet()) {
             text = text.replace("${" + entry.getKey() + "}", entry.getValue().toString());
         }

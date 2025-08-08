@@ -32,9 +32,13 @@ public class IllegalParamController {
             testCase.setHeaders(TestCaseUtils.getHeaders(basicCase.get(HEADERS_KEY)));
             testCase.setError( true);
             System.out.println("\n执行用例: " + testCase.getCaseName());
-            String response = tester.sendRequest(testCase);
-            System.out.println(response);
-//            testCase.setHeaders( basicCase.get(CurlParserUtils.HEADERS_KEY));
+            tester.sendRequest(testCase);
+            tester.assertResponse(testCase);
+            if(testCase.isSuccess()) {
+                System.out.println("✅ 测试通过");
+            }else {
+                System.out.println("❌ 测试失败: " + testCase.getErrorMsg());
+            }
         }
 
         return "执行成功";

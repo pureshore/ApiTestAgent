@@ -16,7 +16,6 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,17 +58,8 @@ public class HttpClientUtils {
     public static String post(String url, Map<String, Object> params, Map<String, String> headers) {
         return request("POST", url, params, headers);
     }
-    
-    /**
-     * 发送HTTP请求
-     *
-     * @param method 请求方法
-     * @param url    地址
-     * @param params 参数
-     * @param headers 请求头
-     * @return 请求结果
-     */
-    public static String request( String url, String method, Map<String, Object> params, Map<String, String> headers) {
+
+    public static HttpResponse httpPost(String url, String method, Map<String, Object> params, Map<String, String> headers) {
         if (method == null) {
             throw new RuntimeException("请求方法不能为空");
         }
@@ -80,7 +70,7 @@ public class HttpClientUtils {
 
         try {
             HttpRequestBase request;
-            
+
             if ("GET".equalsIgnoreCase(method)) {
                 // 构建带参数的URL
                 URIBuilder uriBuilder = new URIBuilder(url);
@@ -112,12 +102,36 @@ public class HttpClientUtils {
                     request.setHeader(header.getKey(), header.getValue());
                 }
             }
-
             HttpResponse response = client.execute(request);
+            return response;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    public static String getResponseContent(HttpResponse response) {
+        try {
             HttpEntity entity = response.getEntity();
             return entity != null ? EntityUtils.toString(entity, StandardCharsets.UTF_8) : null;
-            
-        } catch (IOException | URISyntaxException e) {
+        } catch (IOException e) {
+            throw new RuntimeException("HTTP请求失败", e);
+        }
+    }
+    
+    /**
+     * 发送HTTP请求
+     *
+     * @param method 请求方法
+     * @param url    地址
+     * @param params 参数
+     * @param headers 请求头
+     * @return 请求结果
+     */
+    public static String request( String url, String method, Map<String, Object> params, Map<String, String> headers) {
+        try {
+            HttpResponse response = httpPost(url, method, params, headers);
+            HttpEntity entity = response.getEntity();
+            return entity != null ? EntityUtils.toString(entity, StandardCharsets.UTF_8) : null;
+        } catch (Exception e) {
             throw new RuntimeException("HTTP请求失败", e);
         }
     }
