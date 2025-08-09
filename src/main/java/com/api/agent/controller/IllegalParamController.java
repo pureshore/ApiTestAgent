@@ -45,6 +45,7 @@ public class IllegalParamController {
             List<String> joins =  new ArrayList<>();
             joins.add(testCase.getCaseName());
             joins.add(testCase.isSuccess() ? "✅" : "❌ "+testCase.getErrorMsg());
+//            joins.add(testCase.getErrorBody());
             joins.add(testCase.getResponseBody());
             result.append(joins.stream().collect(Collectors.joining(";")));
             result.append("\n");
