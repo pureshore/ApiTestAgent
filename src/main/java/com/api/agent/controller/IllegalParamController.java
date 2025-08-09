@@ -4,9 +4,9 @@ import com.api.agent.core.ApiTester;
 import com.api.agent.dto.TestCase;
 import com.api.agent.utils.CurlParserUtils;
 import com.api.agent.utils.FileUtils;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -14,7 +14,7 @@ import java.util.Map;
 
 import static com.api.agent.utils.CurlParserUtils.*;
 
-@Controller
+@RestController
 public class IllegalParamController {
     private ApiTester tester = new ApiTester();
     @PostMapping("/api/error")
