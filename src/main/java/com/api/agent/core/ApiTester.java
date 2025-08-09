@@ -17,7 +17,6 @@ public class ApiTester {
      * @param testCase
      */
     public void sendRequest(TestCase testCase)  {
-        variableStore.clearAllVariables();
         // 替换URL中的变量
         String url = variableStore.replaceVariables(testCase.getUrl());
 
@@ -63,7 +62,10 @@ public class ApiTester {
             for (Map.Entry<String, Object> entry : buildErrorParams(testCase).entrySet()) {
                 if (entry.getValue().toString().equalsIgnoreCase("NULL")) {
                     headers.remove(entry.getKey());
-                }else {
+                }else if (entry.getValue().toString().equalsIgnoreCase("Empty")) {
+                    headers.put(entry.getKey(), "");
+                }
+                else {
                     headers.put(entry.getKey(), entry.getValue().toString());
                 }
             }
@@ -97,6 +99,8 @@ public class ApiTester {
             for (Map.Entry<String, Object> entry : buildErrorParams(testCase).entrySet()) {
                 if (entry.getValue().toString().equalsIgnoreCase("NULL")) {
                     formParams.remove(entry.getKey());
+                } else if (entry.getValue().toString().equalsIgnoreCase("Empty")) {
+                    formParams.put(entry.getKey(), "");
                 }
                 formParams.put(entry.getKey(), entry.getValue().toString());
             }
@@ -120,6 +124,7 @@ public class ApiTester {
                 if (parts.length == 2) {
                     String varName = parts[0].trim();
                     String jsonPath = parts[1].trim();
+                    variableStore.setVariable(varName, null);
                     Object value = JsonPathUtils.extractValue(json, jsonPath);
                     variableStore.setVariable(varName, value);
                 }
@@ -134,10 +139,6 @@ public class ApiTester {
      * @param testCase
      */
     public void assertResponse(TestCase testCase) {
-        // 提取变量
-        if (StringUtils.isNotBlank(testCase.getExtractRules())) {
-            extractVariables(testCase.getResponseBody(), testCase.getExtractRules());
-        }
         testCase.setSuccess(true);
 
         // 断言状态码
@@ -150,6 +151,11 @@ public class ApiTester {
         // 断言响应字段
         if (!testCase.getExpectedFields().isEmpty()) {
             try {
+                // 提取变量
+                if (StringUtils.isNotBlank(testCase.getExtractRules())) {
+                    extractVariables(testCase.getResponseBody(), testCase.getExtractRules());
+                }
+
                 for (String rule : testCase.getExpectedFields().split(";")) {
                     String[] parts = rule.split("=");
                     if (parts.length == 2) {
