@@ -26,7 +26,6 @@ public class ApiTester {
             HttpClientUtils.postJson(url, variableStore.replaceVariables(testCase.getBody()), headers);
         }else if ("form".equalsIgnoreCase(testCase.getParamType())) {
             Map<String, Object> formParams = buildRequestBody(testCase);
-            HttpResponse response = HttpClientUtils.httpPost(url, testCase.getMethod(), formParams, headers);
             testCase.setHttpCode(200);
             url = url.split("\\?")[0];
             if(headers.containsKey("Content-Type")
