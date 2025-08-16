@@ -36,12 +36,6 @@ public class IllegalParamController {
             testCase.setError( true);
             tester.sendRequest(testCase);
             tester.assertResponse(testCase);
-//            System.out.println("\n执行用例: " + testCase.getCaseName());
-//            if(testCase.isSuccess()) {
-//                System.out.println("✅ 测试通过");
-//            }else {
-//                System.out.println("❌ 测试失败: " + testCase.getErrorMsg());
-//            }
             List<String> joins =  new ArrayList<>();
             joins.add(testCase.getCaseName());
             joins.add(testCase.isSuccess() ? "✅" : "❌ "+testCase.getErrorMsg());

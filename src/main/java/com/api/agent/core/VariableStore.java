@@ -21,6 +21,9 @@ public class VariableStore {
 
     public String replaceVariables(String text) {
         for (Map.Entry<String, Object> entry : variables.entrySet()) {
+            if(entry.getValue() == null){
+                continue;
+            }
             text = text.replace("${" + entry.getKey() + "}", entry.getValue().toString());
         }
         return text;

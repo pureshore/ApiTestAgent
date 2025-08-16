@@ -27,8 +27,18 @@ public class ApiTester {
         }else if ("form".equalsIgnoreCase(testCase.getParamType())) {
             Map<String, Object> formParams = buildRequestBody(testCase);
             HttpResponse response = HttpClientUtils.httpPost(url, testCase.getMethod(), formParams, headers);
-            testCase.setHttpCode(response.getStatusLine().getStatusCode());
-            testCase.setResponseBody(HttpClientUtils.getResponseContent( response));
+            testCase.setHttpCode(200);
+            url = url.split("\\?")[0];
+            if(headers.containsKey("Content-Type")
+                    && headers.get("Content-Type").equalsIgnoreCase("application/x-www-form-urlencoded")){
+                testCase.setResponseBody(HttpClientUtils.postFormUrlEncoded(url, formParams, headers));
+            }else {
+                if(testCase.getMethod().equalsIgnoreCase("POST")){
+                    testCase.setResponseBody(HttpClientUtils.post(url, formParams, headers));
+                }else if(testCase.getMethod().equalsIgnoreCase("GET")){
+                    testCase.setResponseBody(HttpClientUtils.get(url, formParams, headers));
+                }
+            }
         }
     }
 

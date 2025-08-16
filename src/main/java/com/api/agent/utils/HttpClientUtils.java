@@ -6,11 +6,13 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -44,7 +46,7 @@ public class HttpClientUtils {
      * @return 请求结果
      */
     public static String get(String url, Map<String, Object> params, Map<String, String> headers) {
-        return request("GET", url, params, headers);
+        return request( url,"GET", params, headers);
     }
 
     /**
@@ -56,7 +58,7 @@ public class HttpClientUtils {
      * @return 请求结果
      */
     public static String post(String url, Map<String, Object> params, Map<String, String> headers) {
-        return request("POST", url, params, headers);
+        return request(url,"POST", params, headers);
     }
 
     public static HttpResponse httpPost(String url, String method, Map<String, Object> params, Map<String, String> headers) {
@@ -115,6 +117,26 @@ public class HttpClientUtils {
         } catch (IOException e) {
             throw new RuntimeException("HTTP请求失败", e);
         }
+    }
+
+    public static String postFormUrlEncoded(String url, Map<String, Object> params, Map<String, String> headers) {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpPost httpPost = new HttpPost(url);
+        try {
+            for (String key : headers.keySet()){
+                httpPost.setHeader(key, headers.get(key));
+            }
+            List<NameValuePair> formParams = new ArrayList<>();
+            for (Map.Entry<String, Object> entry : params.entrySet()) {
+                formParams.add(new BasicNameValuePair(entry.getKey(), entry.getValue().toString()));
+            }
+            httpPost.setEntity(new UrlEncodedFormEntity(formParams, StandardCharsets.UTF_8));
+            CloseableHttpResponse response = httpClient.execute(httpPost);
+            return EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
+        }catch (Exception e){
+            System.out.println("请求失败");
+        }
+        return null;
     }
     
     /**
